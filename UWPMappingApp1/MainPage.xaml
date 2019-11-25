@@ -1,0 +1,26 @@
+﻿<Page
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWPMappingApp1"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Custom="using:Windows.UI.Xaml.Controls.Maps"
+    x:Class="UWPMappingApp1.MainPage"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <TextBox Text="Address Bar" TextWrapping="Wrap" x:Name="AddressBar" VerticalAlignment="Top" HorizontalAlignment="Stretch"/>
+        <Button x:Name="QueryLocation" Click="QueryLocation_Click" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,66,0,0" Content="Query Map"/>
+        <Custom:MapControl 
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            Height="500"
+            Width="500"
+            ZoomLevel="16" 
+            x:Name="MyMapControl"
+            Loaded="MyMapControl_Loaded"
+            Style="Aerial"/>
+        <TextBlock HorizontalAlignment="Center" Margin="0,826,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="20" x:Name="PredictedOutput"/>
+    </Grid>
+</Page>
