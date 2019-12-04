@@ -15,9 +15,9 @@ namespace UWPMappingApp1ML.ConsoleApp
 {
     public static class ModelBuilder
     {
-        private static string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".. /../../"));
+        private static string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
         private static string WORKSPACE_RELATIVE_PATH = Path.Combine(PROJECT_DIRECTORY, "workspace");
-        private static string DATA_DIRECTORY = Path.Combine(PROJECT_DIRECTORY, @"../../../../../data/EuroSAT/");
+        private static string DATA_DIRECTORY = Path.Combine(PROJECT_DIRECTORY, @"../../data/");
         private static string TRAIN_DATA_FILEPATH = Path.Combine(PROJECT_DIRECTORY, DATA_DIRECTORY, "traindata_head.tsv");
         private static string MODEL_FILEPATH = @"../../../../UWPMappingApp1ML.Model/MLModel.zip";
         private static Random RANDOM = new Random(Seed: 1);
@@ -96,7 +96,7 @@ namespace UWPMappingApp1ML.ConsoleApp
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
                 Epoch = 200,
-                //WorkspacePath = WORKSPACE_RELATIVE_PATH,
+                WorkspacePath = WORKSPACE_RELATIVE_PATH,
                 MetricsCallback = (metrics) => Console.WriteLine(metrics),
                 EarlyStoppingCriteria = null,
                 TestOnTrainSet = false
