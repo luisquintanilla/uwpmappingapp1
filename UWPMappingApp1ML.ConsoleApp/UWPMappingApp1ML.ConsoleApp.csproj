@@ -13,4 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\UWPMappingApp1ML.Model\UWPMappingApp1ML.Model.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="workspace\" />
+  </ItemGroup>
 </Project>

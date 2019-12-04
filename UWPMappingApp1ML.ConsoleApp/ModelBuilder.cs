@@ -8,13 +8,17 @@ using Microsoft.ML;
 using Microsoft.ML.Data;
 using UWPMappingApp1ML.Model;
 using Microsoft.ML.Vision;
+using System.Security.Cryptography.X509Certificates;
 
 namespace UWPMappingApp1ML.ConsoleApp
 {
     public static class ModelBuilder
     {
-        private static string TRAIN_DATA_FILEPATH = @"C:\Users\luquinta.REDMOND\AppData\Local\Temp\c9fd85d7-8619-440b-86ea-9e729cccc86a.tsv";
+        private static string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".. /../../"));
+        private static string WORKSPACE_RELATIVE_PATH = Path.Combine(PROJECT_DIRECTORY, "workspace");
+        private static string TRAIN_DATA_FILEPATH = @"C:\Users\luquinta.REDMOND\Datasets\traindata.tsv";
         private static string MODEL_FILEPATH = @"../../../../UWPMappingApp1ML.Model/MLModel.zip";
+        private static Random RANDOM = new Random(Seed: 1);
 
         // Create MLContext to be shared across the model creation workflow objects 
         // Set a random seed for repeatable/deterministic results across multiple trainings.
@@ -22,25 +26,54 @@ namespace UWPMappingApp1ML.ConsoleApp
 
         public static void CreateModel()
         {
-            // Load Data
-            IDataView trainingDataView = mlContext.Data.LoadFromTextFile<ModelInput>(
-                                            path: TRAIN_DATA_FILEPATH,
-                                            hasHeader: true,
-                                            separatorChar: '\t',
-                                            allowQuoting: true,
-                                            allowSparse: false);
+
+            Datasets data = LoadData(TRAIN_DATA_FILEPATH);
+
+            IDataView trainingDataView = mlContext.Data.LoadFromEnumerable(data.TrainSet);
+            IDataView testDataView = mlContext.Data.LoadFromEnumerable(data.TestSet);
 
             // Build training pipeline
             IEstimator<ITransformer> trainingPipeline = BuildTrainingPipeline(mlContext);
 
-            // Evaluate quality of Model
-            Evaluate(mlContext, trainingDataView, trainingPipeline);
-
             // Train Model
             ITransformer mlModel = TrainModel(mlContext, trainingDataView, trainingPipeline);
 
+            // Evaluate quality of Model
+            Evaluate(mlContext, testDataView, mlModel);
+
             // Save model
             SaveModel(mlContext, mlModel, MODEL_FILEPATH, trainingDataView.Schema);
+        }
+
+        static Datasets LoadData(string dataPath)
+        {
+            // Load the data from the file
+            var datasets =
+                File.ReadAllLines(TRAIN_DATA_FILEPATH) // Read File
+                .Select(line =>
+                {
+                    var columns = line.Split('\t'); // Split data into columns
+                    return new ModelInput { Label = columns[0], ImageSource = columns[1] };
+                })
+                //.OrderBy(x => RANDOM.Next())
+                .GroupBy(image => image.Label) // Group by category/label
+                .Select(category => // Create train/test set for each of the categories
+                {
+                    int count = category.Count();
+                    int trainCount = (int)(count * .90); 
+                    int testCount = (int)(count - trainCount);
+                    return new Datasets { TrainSet = category.Take(trainCount), TestSet = category.Skip(trainCount).Take(testCount) };
+                });
+
+            // Flatten train/test category datasets and shuffle them
+            IEnumerable<ModelInput> trainSet = datasets.SelectMany(category => category.TrainSet).OrderBy(_ => RANDOM.Next());
+            IEnumerable<ModelInput> testSet = datasets.SelectMany(category => category.TestSet).OrderBy(_ => RANDOM.Next());
+
+            return new Datasets
+            {
+                TrainSet = trainSet,
+                TestSet = testSet
+            };
         }
 
         public static IEstimator<ITransformer> BuildTrainingPipeline(MLContext mlContext)
@@ -50,8 +83,19 @@ namespace UWPMappingApp1ML.ConsoleApp
                                       .Append(mlContext.Transforms.LoadRawImageBytes("ImageSource_featurized", null, "ImageSource"))
                                       .Append(mlContext.Transforms.CopyColumns("Features", "ImageSource_featurized"));
 
+            var classifierOptions = new ImageClassificationTrainer.Options()
+            {
+                LabelColumnName = "Label",
+                FeatureColumnName = "Features",
+                Epoch = 200,
+                WorkspacePath = WORKSPACE_RELATIVE_PATH,
+                MetricsCallback = (metrics) => Console.WriteLine(metrics),
+                EarlyStoppingCriteria = null,
+                TestOnTrainSet = false
+            };
+
             // Set the training algorithm 
-            var trainer = mlContext.MulticlassClassification.Trainers.ImageClassification(new ImageClassificationTrainer.Options() { LabelColumnName = "Label", FeatureColumnName = "Features" })
+                var trainer = mlContext.MulticlassClassification.Trainers.ImageClassification(classifierOptions)
                                       .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel", "PredictedLabel"));
             var trainingPipeline = dataProcessPipeline.Append(trainer);
 
@@ -68,13 +112,12 @@ namespace UWPMappingApp1ML.ConsoleApp
             return model;
         }
 
-        private static void Evaluate(MLContext mlContext, IDataView trainingDataView, IEstimator<ITransformer> trainingPipeline)
+        private static void Evaluate(MLContext mlContext, IDataView testDataView, ITransformer model)
         {
-            // Cross-Validate with single dataset (since we don't have two datasets, one for training and for evaluate)
-            // in order to evaluate and get the model's accuracy metrics
-            Console.WriteLine("=============== Cross-validating to get model's accuracy metrics ===============");
-            var crossValidationResults = mlContext.MulticlassClassification.CrossValidate(trainingDataView, trainingPipeline, numberOfFolds: 5, labelColumnName: "Label");
-            PrintMulticlassClassificationFoldsAverageMetrics(crossValidationResults);
+            // Evaluating model performance
+            Console.WriteLine("=============== Calculating the model's accuracy metrics ===============");
+            var evaluationResults = mlContext.MulticlassClassification.Evaluate(model.Transform(testDataView));
+            PrintMulticlassClassificationMetrics(evaluationResults);
         }
 
         private static void SaveModel(MLContext mlContext, ITransformer mlModel, string modelRelativePath, DataViewSchema modelInputSchema)
@@ -159,4 +202,13 @@ namespace UWPMappingApp1ML.ConsoleApp
             return confidenceInterval95;
         }
     }
+
+    class Datasets
+    {
+        public IEnumerable<ModelInput> TrainSet { get; set; }
+        public IEnumerable<ModelInput> TestSet { get; set; }
+
+        //public IEnumerable<ModelInput> ValidationSet { get; set; }
+    }
+
 }
