@@ -9,6 +9,7 @@ using Microsoft.ML.Data;
 using UWPMappingApp1ML.Model;
 using Microsoft.ML.Vision;
 using System.Security.Cryptography.X509Certificates;
+using System.Net;
 
 namespace UWPMappingApp1ML.ConsoleApp
 {
@@ -16,7 +17,8 @@ namespace UWPMappingApp1ML.ConsoleApp
     {
         private static string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".. /../../"));
         private static string WORKSPACE_RELATIVE_PATH = Path.Combine(PROJECT_DIRECTORY, "workspace");
-        private static string TRAIN_DATA_FILEPATH = @"C:\Users\luquinta.REDMOND\Datasets\traindata.tsv";
+        private static string DATA_DIRECTORY = Path.Combine(PROJECT_DIRECTORY, @"../../../../../data/EuroSAT/");
+        private static string TRAIN_DATA_FILEPATH = Path.Combine(PROJECT_DIRECTORY, DATA_DIRECTORY, "traindata_head.tsv");
         private static string MODEL_FILEPATH = @"../../../../UWPMappingApp1ML.Model/MLModel.zip";
         private static Random RANDOM = new Random(Seed: 1);
 
@@ -26,6 +28,12 @@ namespace UWPMappingApp1ML.ConsoleApp
 
         public static void CreateModel()
         {
+
+            Console.WriteLine("AppContext.BaseDirectory: {0}", AppContext.BaseDirectory);
+            Console.WriteLine("PROJECT_DIRECTORY: {0}", PROJECT_DIRECTORY);
+            Console.WriteLine("WORKSPACE_RELATIVE_PATH: {0}", WORKSPACE_RELATIVE_PATH);
+            Console.WriteLine("DATA_DIRECTORY: {0}", DATA_DIRECTORY);
+            Console.WriteLine("TRAIN_DATA_FILEPATH: {0}", TRAIN_DATA_FILEPATH);
 
             Datasets data = LoadData(TRAIN_DATA_FILEPATH);
 
@@ -53,7 +61,7 @@ namespace UWPMappingApp1ML.ConsoleApp
                 .Select(line =>
                 {
                     var columns = line.Split('\t'); // Split data into columns
-                    return new ModelInput { Label = columns[0], ImageSource = columns[1] };
+                    return new ModelInput { Label = columns[0], ImageSource = Path.Combine(DATA_DIRECTORY, columns[1]) };
                 })
                 //.OrderBy(x => RANDOM.Next())
                 .GroupBy(image => image.Label) // Group by category/label
@@ -88,7 +96,7 @@ namespace UWPMappingApp1ML.ConsoleApp
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
                 Epoch = 200,
-                WorkspacePath = WORKSPACE_RELATIVE_PATH,
+                //WorkspacePath = WORKSPACE_RELATIVE_PATH,
                 MetricsCallback = (metrics) => Console.WriteLine(metrics),
                 EarlyStoppingCriteria = null,
                 TestOnTrainSet = false
@@ -109,6 +117,7 @@ namespace UWPMappingApp1ML.ConsoleApp
             ITransformer model = trainingPipeline.Fit(trainingDataView);
 
             Console.WriteLine("=============== End of training process ===============");
+
             return model;
         }
 

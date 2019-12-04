@@ -11,7 +11,7 @@ namespace UWPMappingApp1ML.ConsoleApp
     class Program
     {
         //Dataset to use for predictions 
-        private const string DATA_FILEPATH = @"C:\Users\luquinta.REDMOND\AppData\Local\Temp\c9fd85d7-8619-440b-86ea-9e729cccc86a.tsv";
+        // private const string DATA_FILEPATH = @"C:\Users\luquinta.REDMOND\AppData\Local\Temp\c9fd85d7-8619-440b-86ea-9e729cccc86a.tsv";
 
         static void Main(string[] args)
         {
