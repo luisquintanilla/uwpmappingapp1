@@ -350,3 +350,5 @@ MigrationBackup/
 .ionide/
 
 /UWPMappingApp1ML.ConsoleApp/data/images
+
+.vscode
