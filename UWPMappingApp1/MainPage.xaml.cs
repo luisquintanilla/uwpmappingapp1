@@ -61,12 +61,12 @@ namespace UWPMappingApp1
             var coordinates = await GetCoordinatesAsync(AddressBar.Text);
 
             SetNewMapLocation(MyMapControl, coordinates);
-            
+
+            PredictedOutput.Text = "Inspecting Image...";
+
             await Task.Delay(1000);
 
             var mapImage = await GetMapAsImageAsync();
-
-            PredictedOutput.Text = "Getting prediction...";
 
             var prediction = ConsumeModel.Predict(new ModelInput { ImageSource = mapImage.Path });
 
@@ -116,7 +116,7 @@ namespace UWPMappingApp1
             //await MyMapControl.TrySetViewAsync(new Geopoint(newLocation));
 
             map.Center = new Geopoint(newLocation);
-            map.ZoomLevel = 16;
+            map.ZoomLevel = 19;
         }
 
         private async Task<StorageFile> GetMapAsImageAsync()

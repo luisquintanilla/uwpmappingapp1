@@ -17,7 +17,7 @@
             HorizontalAlignment="Center"
             Height="500"
             Width="500"
-            ZoomLevel="16" 
+            ZoomLevel="19" 
             x:Name="MyMapControl"
             Loaded="MyMapControl_Loaded"
             Style="Aerial"/>
